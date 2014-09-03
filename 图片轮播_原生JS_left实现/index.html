@@ -1,0 +1,107 @@
+<!DOCTYPE HTML>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8">
+	<title></title>
+	<style type="text/css">
+    body{
+        text-align: center;
+    }
+    .wrap{
+        position: relative;
+    	height: 268px;
+    	width: 500px;
+        border: 1px solid black;
+    	margin: 0 auto;
+    	overflow: hidden;
+    }
+    #imgW{
+        position: absolute;
+        top: 0;
+        left: 0;
+    	height: 268px;
+    	width: 2000px;
+    }
+    #imgW img{
+    	float: left;
+    	height: 268px;
+    	width: 500px;
+    	overflow: hidden;
+    	zoom: 1;
+    }
+	</style>
+</head>
+<body>
+	<div class="wrap">
+		<div id="imgW">
+			<img src="images/1.jpg" alt=""><img src="images/2.jpg" alt=""><img src="images/3.jpg" alt=""><img src="images/4.jpg" alt=""></div>
+	</div>
+	<script type="text/javascript">
+    var imgScroll = (function () {
+
+        //设置index的值
+        var index = 0;
+
+        //先找到imgW
+        var imgW = document.getElementById('imgW');
+
+        //获得第一张张图片的长度
+        var imgWidth = Number(document.images[0].offsetWidth);
+
+        function Scroll () {
+
+            if (index == 3){
+                minusLeft();
+            } else {
+                addLeft();
+            }
+        }
+
+        function addLeft () {
+
+            //取得imgW的left的值
+            var imgWL = imgW.style.left? imgW.style.left.match(/\d+/).join() : 0;
+            var imgWL = Number(imgWL);
+            var num = 100;
+
+             imgW.style.left =  -(imgWL + num) + 'px';
+
+            if ((imgWL + num) % imgWidth != 0) {
+                setTimeout(arguments.callee, 50);
+            } else {
+                index ++;
+                setTimeout(Scroll, 6000);
+            }
+        }
+
+        function minusLeft () {
+
+             //取得imgW的left的值
+            var imgWL = imgW.style.left? imgW.style.left.match(/\d+/).join() : 0;
+            var imgWL = Number(imgWL);
+            var num = 300;
+
+            imgW.style.left =  -(imgWL - num)  + 'px';
+
+            if ((imgWL - num)  == 0) {
+                index = 0;
+                setTimeout(Scroll, 6000);
+            } else {
+                setTimeout(arguments.callee, 20)
+            }
+        }
+
+        function init () {
+            setTimeout(Scroll, 80);
+        }
+
+    	return {
+            init : init
+    	}
+    })();
+
+    imgScroll.init();
+
+	</script>
+</body>
+</html>
