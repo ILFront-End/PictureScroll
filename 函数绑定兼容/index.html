@@ -1,0 +1,115 @@
+<!DOCTYPE HTML>
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+    <input type="button" value="点击" id="button">
+    <a href="http://www.baidu.com" id="a">链接</a>
+</body>
+    <script type="text/javascript">
+    
+    var EventUtil = (function () {
+
+        function addHandler (element, type, handler) {
+            if (typeof element.addEventListener != 'undefined') {
+                //false表示在冒泡阶段执行事件处理函数
+                element.addEventListener(type, handler, false);
+            } else {
+                //定义一个事件域的哈希表，装载各种事件类型（click型，blur型等）
+                if (typeof element.events == 'undefined') {
+                    element.events = {};
+                }
+                //在哈希表内存放事件的各种函数
+                //这是第一次执行，定义一个数组
+                if (typeof element.events[type] == 'undefined') {
+                    element.events[type] = [];
+                    element.events[type].push(handler);
+                }
+
+                //indexOf()方法ie9一下不支持，所以我们不能用这个方法
+                /*if (element.events[type].indexOf(handler) == -1 ) {
+                        element.events[type].push(handler);
+                };*/
+
+                //这个是通用的方法，检测数组中是否存在某个值
+                if (exist(element.events[type], handler)) {
+                    element.events[type].push(handler);
+                }
+
+                element['on' + type] = exec;
+            }
+        }
+
+        function exec (event) {
+            var e = event || fixEvent(window.event)
+            for (var i in this.events[e.type]) {
+                this.events[e.type][i].call(this,e);
+            }    
+        }
+
+        function fixEvent (e) {
+            e.target = e.srcElemnt;
+            e.preventDefault = function () {
+                e.returnValue = false;
+            }
+            e.stopPropagation = function () {
+                e.cancelBubble = true;
+            }
+            return e;
+        }
+
+        function exist (array, some) {
+            for (var i in array) {
+                if (array[i] == some) return false;
+            }
+            return true;
+        }
+
+        function removeHandler (element, type, handler) {
+            if (typeof element.removeEventListener != 'undefined') {
+                element.removeHandler(type, handler, false);
+            } else {
+                var es = element.events[type];
+                for (var i in es) {
+                    if (es[i] == handler) {
+                        delete es[i];
+                    }
+                }
+            }
+        }
+
+        return {
+            addHandler : addHandler,
+            removeHandler : removeHandler
+        }
+    })();
+
+
+
+    var btm = document.getElementById('button');
+    var a = document.getElementById('a');
+    EventUtil.addHandler(a, 'click', function (e) {
+        e.preventDefault();
+    })
+    EventUtil.addHandler(btm, 'click', f1);
+    EventUtil.addHandler(btm, 'click', f1);
+    EventUtil.addHandler(btm, 'click', f2);
+    EventUtil.addHandler(btm, 'click', f3);
+    EventUtil.removeHandler(btm, 'click', f3);
+
+    function f1 (event) {
+        alert('1' + this + event.type);
+    }
+
+    function f2 (event) {
+        alert('2'  + this + event.type);
+    }
+
+    function f3 (event) {
+        alert('3' + this + event.type);
+    }
+    
+</script>
+</html>
