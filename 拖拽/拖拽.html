@@ -1,0 +1,194 @@
+<!DOCTYPE HTML>
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <style type="text/css">
+    body, html {
+        height: 1000px;
+        width: 2000px; 
+        /* 如果考虑到页面滑轮，就应该用pageX，PageY；不能用客户区clientX，clientY */ 
+    }
+    #div{
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        height: 200px;
+        width: 200px;       
+        background: red;
+        cursor: pointer;
+    }
+    </style>
+</head>
+<body>
+    <div id="div"></div>
+    <script type="text/javascript">
+
+    var EventUtil = (function () {
+
+        function addHandler (element, type, handler) {
+            if (typeof element.addEventListener != 'undefined') {
+                //false表示在冒泡阶段执行事件处理函数
+                element.addEventListener(type, handler, false);
+            } else {
+                //定义一个事件域的哈希表，装载各种事件类型（mousedown型，blur型等）
+                if (typeof element.events == 'undefined') {
+                    element.events = {};
+                }
+                //在哈希表内存放事件的各种函数
+                //这是第一次执行，定义一个数组
+                if (typeof element.events[type] == 'undefined') {
+                    element.events[type] = [];
+                    element.events[type].push(handler);
+                }
+
+                //indexOf()方法ie9一下不支持，所以我们不能用这个方法
+                /*if (element.events[type].indexOf(handler) == -1 ) {
+                        element.events[type].push(handler);
+                };*/
+
+                //这个是通用的方法，检测数组中是否存在某个值
+                if (exist(element.events[type], handler)) {
+                    element.events[type].push(handler);
+                }
+
+                element['on' + type] = exec;
+            }
+        }
+
+        function exec (event) {
+            var e = event || fixEvent(window.event)
+            for (var i in this.events[e.type]) {
+                this.events[e.type][i].call(this,e);
+            }    
+        }
+
+        function fixEvent (e) {
+            e.target = e.srcElemnt;
+            e.preventDefault = function () {
+                e.returnValue = false;
+            }
+            e.stopPropagation = function () {
+                e.cancelBubble = true;
+            }
+            return e;
+        }
+
+        function exist (array, some) {
+            for (var i in array) {
+                if (array[i] == some) return false;
+            }
+            return true;
+        }
+
+        function removeHandler (element, type, handler) {
+            if (typeof element.removeEventListener != 'undefined') {
+                element.removeEventListener(type, handler, false);
+            } else {
+                var es = element.events[type];
+                for (var i in es) {
+                    if (es[i] == handler) {
+                        delete es[i];
+                    }
+                }
+            }
+        }
+
+        return {
+            addHandler : addHandler,
+            removeHandler : removeHandler
+        }
+    })();
+
+
+
+    var DragApp = (function () {
+
+        //私有部分
+        var element, offsetHeight, offsetWidth, pointX, pointY, offset, bottom, right,
+            pageHeight = document.body.offsetHeight || document.documentElement.offsetHeight, 
+            pageWidth = document.body.offsetWidth || document.documentElement.offsetWidth;
+        
+        function addDrag (ele) {
+            //给element赋值
+            element = ele;
+            offsetHeight = element.offsetHeight;
+            offsetWidth = element.offsetWidth;
+            EventUtil.addHandler(element, 'mousedown', addmousedownMethod);
+            EventUtil.addHandler(element, 'mouseup', addmouseUpMethod);
+        };
+
+        function addmouseUpMethod () {
+            EventUtil.removeHandler(element, 'mousemove', move);
+        }
+
+        //获取某元素到body的距离
+        function Offset () {
+            var offsetTop = element.offsetTop , 
+                offsetLeft = element.offsetLeft,
+                parent = element.offserParent;
+            while (parent) {
+                offsetTop = offsetTop + parent.offseTop;
+                offsetLeft = offsetLeft + parent.offsetLeft
+                parent = element.offserParent;
+            }
+            return {
+                offsetLeft : offsetLeft,
+                offsetTop : offsetTop
+            }
+
+        }
+
+        function addmousedownMethod (e) {
+            offset = Offset();
+            pointY = e.clientY + (document.documentElement.scrollTop || document.body.scrollTop) -  offset.offsetTop;
+            pointX = e.clientX + (document.documentElement.scrollLeft || document.body.scrollLeft) -  offset.offsetLeft;
+            bottom =  offsetHeight -pointY;
+            right = offsetWidth -pointX;
+            EventUtil.addHandler(element, 'mousemove', move);
+        }
+
+        function move (e) {
+            var w = element.style.left.match(/-?\d*/).toString(),
+                h = element.style.top.match(/-?\d*/).toString(),
+                width = w != '' ? Number(w) : 0,
+                height = h != '' ? Number(h) : 0;
+            if (width < 0) {
+                element.style.left = '0px';
+                EventUtil.removeHandler(element, 'mousemove', move);
+            } else if (width > (pageWidth - right)) {
+                element.style.left = (pageWidth - right) +'px';
+                EventUtil.removeHandler(element, 'mousemove', move);
+            } else if (height < 0) {
+                element.style.top = '0px';
+                EventUtil.removeHandler(element, 'mousemove', move);
+            } else if (height > (pageHeight - bottom)) { 
+                element.style.top = (pageHeight - bottom) + 'px';
+                EventUtil.removeHandler(element, 'mousemove', move);
+            } else {
+                 element.style.left = e.clientX + (document.documentElement.scrollLeft || document.body.scrollLeft)  - pointX + 'px';
+                  element.style.top = e.clientY + (document.documentElement.scrollTop || document.body.scrollTop) - pointY + 'px';
+            }
+        }
+
+        function removeDrag () {
+            EventUtil.removeHandler(element, 'mousedown', addmousedownMethod);
+            EventUtil.removeHandler(element, 'mousemove', move);
+        }
+
+        //返回公共接口
+        return{
+            addDrag : addDrag,
+            removeDrag : removeDrag
+        }
+    })();
+
+
+
+    var div = document.getElementById('div');
+
+    DragApp.addDrag(div);
+    
+    </script>
+</body>
+</html>
